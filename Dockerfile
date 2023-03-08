@@ -11,12 +11,29 @@ ARG HOME=/root
 
 # 0. Install general tools
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && \
+RUN sed -i "s@http://.*archive.ubuntu.com@http://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list && \
+  sed -i "s@http://.*security.ubuntu.com@http://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list && \
+    apt-get update && \
     apt-get install -y \
         curl \
         git \
         python3 \
-        wget
+        wget \
+        zsh \
+        vim \
+    && ln -s /usr/bin/python3 /usr/bin/python
+
+# 0.1 run zsh installation script
+RUN sh -c "$(curl -fsSL \
+  https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+# 0.2 config zsh
+COPY .zshrc /root
+RUN \
+  git clone https://github.com/zsh-users/zsh-autosuggestions /root/.oh-my-zsh/custom/plugins/zsh-autosuggestions \
+  && git clone https://github.com/zsh-users/zsh-history-substring-search /root/.oh-my-zsh/custom/plugins/zsh-history-substring-search \
+  && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git /root/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+
 
 # 1. Set up QEMU RISC-V
 # - https://learningos.github.io/rust-based-os-comp2022/0setup-devel-env.html#qemu
