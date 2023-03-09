@@ -74,14 +74,17 @@ RUN qemu-system-riscv64 --version && \
 # - https://github.com/rust-lang/docker-rust/blob/master/Dockerfile-debian.template
 
 # 2.1. Install
-ENV RUSTUP_HOME=/usr/local/rustup \
+# RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+ENV RUSTUP_DIST_SERVER=https://mirrors.ustc.edu.cn/rust-static \
+    RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup \
+    RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH \
-    RUST_VERSION=nightly
+    RUST_VERSION=stable
 RUN set -eux; \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup-init; \
     chmod +x rustup-init; \
-    ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION; \
+    ./rustup-init -y --no-modify-path --profile default --default-toolchain $RUST_VERSION; \
     rm rustup-init; \
     chmod -R a+w $RUSTUP_HOME $CARGO_HOME;
 
@@ -90,13 +93,16 @@ RUN rustup --version && \
     cargo --version && \
     rustc --version
 
+RUN mkdir -p /root/.cargo && \
+    echo "[source.crates-io]\nregistry = "https://github.com/rust-lang/crates.io-index"\nreplace-with = 'ustc'\n[source.ustc]\nregistry = "git://mirrors.ustc.edu.cn/crates.io-index"" > /root/.cargo/config
+
 # 3. Build env for labs
 # See os1/Makefile `env:` for example.
 # This avoids having to wait for these steps each time using a new container.
-RUN rustup target add riscv64gc-unknown-none-elf && \
-    cargo install cargo-binutils --vers ~0.2 && \
-    rustup component add rust-src && \
-    rustup component add llvm-tools-preview
+# RUN (rustup target list | grep "riscv64gc-unknown-none-elf (installed)") || rustup target add riscv64gc-unknown-none-elf && \
+# 	cargo install cargo-binutils && \
+# 	rustup component add rust-src && \
+# 	rustup component add llvm-tools-preview
 
 # Ready to go
 WORKDIR ${HOME}
